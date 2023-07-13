@@ -12,23 +12,23 @@ import tensorflow as tf
 import tqdm
 
 global LABELS  # = ['music', 'speech',]
-LABELS = ['music', 'speech', ]
+LABELS = ['music', 'speech']
 
 PREPROCESSING_ARGS = {
     'downsampling_rate': 16000,
-    'frame_lenght_in_s': 0.04,
-    'frame_step_in_s': 0.04,
-    'num_mel_bins': 40,
+    'frame_lenght_in_s': 0.032,
+    'frame_step_in_s': 0.032,
+    'num_mel_bins': 20,
     'lower_f': 100,
     'upper_f': 8000,
-    'num_coefficients': 10
+    'num_coefficients': 20
 }
 
-MODEL_PATH = './model.tflite.zip'
+MODEL_PATH = 'model.tflite.zip'
 MODEL_NAME = MODEL_PATH.split('/')[-1].split('.')[0]
 
 is_silence_flag: bool = True
-keyword: str = 'speech'
+keyword: str = 'music'
 prediction_probability: float = 0.0
 
 
@@ -80,11 +80,11 @@ class TFLiteInterpreter:
         return predicted_label, probability
 
     def preprocess(self, indata: np.ndarray, sampling_rate):
-        # indata = get_audio_from_numpy(indata)
+        indata = get_audio_from_numpy(indata)
         audio = tf.convert_to_tensor(indata)
         audio = tf.squeeze(audio)
         audio_padded = audio
-        # audio_padded = tf.cast(audio_padded, tf.float32)
+        audio_padded = tf.cast(audio_padded, tf.float32)
         sampling_rate_int64 = tf.cast(self.downsampling_rate, tf.int64)
         # zero_padding = tf.zeros(sampling_rate - tf.shape(audio), dtype=tf.float32)
         # audio_padded = tf.concat([audio, zero_padding], axis=0)
@@ -173,21 +173,20 @@ def sound_check(indata, frames, callback_time, status):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(add_help=True,
                                      description='The tflite model used as predictor, must be placed in the same folder of the script and should be named "model17.tflite". Example launch command "python lab1_ex2.py --hostname xxxx --port xxxxx --password xxxx --user xxxx --device x.')
-    parser.add_argument('--resolution', type=str, default='float32')
+    parser.add_argument('--resolution', type=str, default='int16')
     parser.add_argument('--samplerate', type=float, default=16000)
     parser.add_argument('--channels', type=int, default=1)
-    parser.add_argument('--duration', type=float, default=3)
+    parser.add_argument('--duration', type=float, default=0.3)
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--framelength', type=float, default=0.004)
     parser.add_argument('--dbt', type=int, default=-266)
     parser.add_argument('--durationtime', type=float, default=0.04)
-    parser.add_argument('--sensor_name', type=str, default='s0')
 
     args = parser.parse_args()
 
     broker = 'hermesdmpmqttbroker.e3ebhhb8bkhhd6fh.westeurope.azurecontainer.io'
     port = 1883
-    topic = 's290453/sensor_data/' + args.sensor_name
+    topic = 's290453/sensor_data/s1'
 
 
     def on_connect(client, userdata, flags, rc):
@@ -231,4 +230,4 @@ if __name__ == '__main__':
                 client.publish(topic, json.dumps(data))
             # sleep(args.duration)
             for _ in tqdm.tqdm(range(int(args.duration * 1000))):
-                sleep(0.8 / 1000)
+                sleep(0.9 / 1000)
